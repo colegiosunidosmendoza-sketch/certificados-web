@@ -23,11 +23,7 @@ else:
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
 CERT_BASE = os.path.join(BASE, "certificados")
 
-CERT_FOLDERS = [
-    ("Lote 2", "lote_2_-_ii_jornada_de_educacion_renombrado"),
-    ("Lote 3", "lote_3_-_ii_jornada_de_educacion_renombrado"),
-    ("Lote 1", "lote_1_-_ii_jornada_de_educacion_renombrado"),
-]
+CERT_FOLDER = "todos_los_certificados"
 
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -45,18 +41,16 @@ def normalizar(texto):
 
 def cargar_certificados():
     mapa = {}
-    for lote, carpeta in CERT_FOLDERS:
-        path = os.path.join(CERT_BASE, carpeta)
-        if not os.path.isdir(path):
+    path = os.path.join(CERT_BASE, CERT_FOLDER)
+    if not os.path.isdir(path):
+        return mapa
+    for f in os.listdir(path):
+        if not f.endswith(".jpg"):
             continue
-        for f in os.listdir(path):
-            if not f.endswith(".jpg"):
-                continue
-            nombre = f[:-4]
-            mapa[normalizar(nombre)] = {
-                "path": os.path.join(path, f),
-                "lote": lote,
-            }
+        nombre = f[:-4]
+        mapa[normalizar(nombre)] = {
+            "path": os.path.join(path, f),
+        }
     return mapa
 
 
@@ -77,7 +71,6 @@ def cargar_participantes(mapa_certs):
             "nombre": nombre_completo,
             "email": email,
             "certificado": cert["path"] if cert else None,
-            "lote": cert["lote"] if cert else None,
         })
     return personas
 
@@ -178,7 +171,6 @@ def verificar():
     return jsonify({
         "existe": True,
         "nombre": persona["nombre"],
-        "lote": persona["lote"],
     })
 
 

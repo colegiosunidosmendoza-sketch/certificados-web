@@ -126,7 +126,7 @@ btnSi.addEventListener('click', async () => {
   const email = currentEmail;
 
   nombreDisplay.textContent = currentData.nombre;
-  badgeLote.textContent = currentData.lote;
+  if (badgeLote) badgeLote.style.display = 'none';
 
   const imgUrl = `/api/certificado?email=${encodeURIComponent(email)}`;
   certImg.src = imgUrl;
