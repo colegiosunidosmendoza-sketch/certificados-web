@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colegios Unidos · Certificados</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Anton&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="header">
+  <h1>COLEGIOS UNIDOS <span>·</span> 2° ENCUENTRO</h1>
+  <div class="sub">IA y bienestar en el mapa escolar</div>
+</div>
+
+<div class="container">
+  <div class="card" id="step1">
+    <h2>Tu certificado</h2>
+    <p class="desc">Ingresá el email con el que te registraste para ver y descargar tu certificado.</p>
+    <form id="formEmail" class="form">
+      <input type="email" id="inputEmail" placeholder="tu@email.com" required autofocus>
+      <button type="submit">Buscar certificado</button>
+    </form>
+    <p class="error" id="errorMsg"></p>
+  </div>
+
+  <div class="card hidden" id="step2">
+    <div class="info-bar">
+      <span class="badge" id="badgeLote"></span>
+      <span id="nombreDisplay"></span>
+    </div>
+    <div class="cert-wrapper">
+      <img id="certImg" alt="Certificado">
+    </div>
+    <div class="actions">
+      <a id="btnDescargar" class="btn btn-primary" download>Descargar certificado</a>
+      <button id="btnEnviar" class="btn btn-secondary">Enviar por email</button>
+      <a id="btnLinkedin" class="btn btn-linkedin" target="_blank" rel="noopener">
+        Compartir en LinkedIn
+      </a>
+    </div>
+    <p class="msg" id="statusMsg"></p>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('formEmail');
+const input = document.getElementById('inputEmail');
+const errorMsg = document.getElementById('errorMsg');
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const certImg = document.getElementById('certImg');
+const nombreDisplay = document.getElementById('nombreDisplay');
+const badgeLote = document.getElementById('badgeLote');
+const btnDescargar = document.getElementById('btnDescargar');
+const btnEnviar = document.getElementById('btnEnviar');
+const btnLinkedin = document.getElementById('btnLinkedin');
+const statusMsg = document.getElementById('statusMsg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorMsg.textContent = '';
+  statusMsg.textContent = '';
+  const email = input.value.trim();
+
+  if (!email) return;
+
+  try {
+    const res = await fetch('/api/verificar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      errorMsg.textContent = 'Email no encontrado. Verificá que sea el mismo con el que te registraste.';
+      return;
+    }
+
+    const data = await res.json();
+
+    nombreDisplay.textContent = data.nombre;
+    badgeLote.textContent = data.lote;
+    const imgUrl = `/api/certificado?email=${encodeURIComponent(email)}`;
+    certImg.src = imgUrl;
+    certImg.onload = () => {
+      step1.classList.add('hidden');
+      step2.classList.remove('hidden');
+    };
+    btnDescargar.href = imgUrl;
+    btnDescargar.download = `certificado_${data.nombre.replace(/\s+/g, '_')}.jpg`;
+
+    const shareRes = await fetch(`/api/share-url?email=${encodeURIComponent(email)}`);
+    if (shareRes.ok) {
+      const shareData = await shareRes.json();
+      btnLinkedin.href = shareData.url;
+    }
+
+    btnEnviar.onclick = async () => {
+      btnEnviar.disabled = true;
+      statusMsg.textContent = 'Enviando...';
+      try {
+        const r = await fetch('/api/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const d = await r.json();
+        statusMsg.textContent = d.ok ? '✅ Enviado a tu email.' : 'Error: ' + d.error;
+      } catch {
+        statusMsg.textContent = 'Error de conexión al enviar.';
+      }
+      btnEnviar.disabled = false;
+    };
+  } catch {
+    errorMsg.textContent = 'Error de conexión. Intentalo de nuevo.';
+  }
+});
+
+input.addEventListener('input', () => {
+  errorMsg.textContent = '';
+  statusMsg.textContent = '';
+});
+</script>
+</body>
+</html>
