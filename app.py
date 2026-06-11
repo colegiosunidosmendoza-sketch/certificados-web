@@ -1,4 +1,6 @@
 import os
+import re
+import unicodedata
 import smtplib
 import ssl
 from email.message import EmailMessage
@@ -14,23 +16,19 @@ app = Flask(__name__)
 # ---------------------------------------------------------------------------
 HOME = os.path.expanduser("~")
 if os.path.exists(os.path.join(HOME, "certificados-web")):
-    # PythonAnywhere
     BASE = os.path.join(HOME, "certificados-web")
 else:
-    # Local
     BASE = os.path.join(HOME, "Desktop", "Colegios Unidos", "certificados-web")
 
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
 CERT_BASE = os.path.join(BASE, "certificados")
 
-# Orden de los lotes (tal cual estan en el disco)
-LOTES = [
-    ("Lote 2", "lote2", 80),
-    ("Lote 3", "lote3", 27),
-    ("Lote 1", "lote1", 80),
+CERT_FOLDERS = [
+    ("Lote 2", "lote_2_-_ii_jornada_de_educacion_renombrado"),
+    ("Lote 3", "lote_3_-_ii_jornada_de_educacion_renombrado"),
+    ("Lote 1", "lote_1_-_ii_jornada_de_educacion_renombrado"),
 ]
 
-# Email – usa variables de entorno en produccion
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
@@ -38,10 +36,31 @@ SMTP_PASS = os.getenv("SMTP_PASS", "")
 FROM_EMAIL = os.getenv("FROM_EMAIL", SMTP_USER)
 FROM_NAME = os.getenv("FROM_NAME", "Colegios Unidos")
 
-# ---------------------------------------------------------------------------
-# Cargar datos
-# ---------------------------------------------------------------------------
-def cargar_participantes():
+
+def normalizar(texto):
+    s = unicodedata.normalize("NFKD", texto).encode("ASCII", "ignore").decode()
+    s = re.sub(r"[^\w\s]", "", s)
+    return " ".join(s.lower().split())
+
+
+def cargar_certificados():
+    mapa = {}
+    for lote, carpeta in CERT_FOLDERS:
+        path = os.path.join(CERT_BASE, carpeta)
+        if not os.path.isdir(path):
+            continue
+        for f in os.listdir(path):
+            if not f.endswith(".jpg"):
+                continue
+            nombre = f[:-4]
+            mapa[normalizar(nombre)] = {
+                "path": os.path.join(path, f),
+                "lote": lote,
+            }
+    return mapa
+
+
+def cargar_participantes(mapa_certs):
     wb = openpyxl.load_workbook(EXCEL_PATH)
     ws = wb.active
     personas = []
@@ -49,44 +68,22 @@ def cargar_participantes():
         nombre = (ws.cell(row, 1).value or "").strip()
         apellido = (ws.cell(row, 2).value or "").strip()
         email = (ws.cell(row, 3).value or "").strip().lower()
-        if email:
-            personas.append({
-                "nombre": f"{nombre} {apellido}".strip(),
-                "email": email,
-            })
+        if not email:
+            continue
+        nombre_completo = f"{nombre} {apellido}".strip()
+        norm = normalizar(nombre_completo)
+        cert = mapa_certs.get(norm)
+        personas.append({
+            "nombre": nombre_completo,
+            "email": email,
+            "certificado": cert["path"] if cert else None,
+            "lote": cert["lote"] if cert else None,
+        })
     return personas
 
 
-def asignar_certificados(personas):
-    idx = 0
-    for lote_nombre, carpeta, cantidad in LOTES:
-        lote_path = os.path.join(CERT_BASE, carpeta)
-        for n in range(1, cantidad + 1):
-            if idx >= len(personas):
-                break
-
-            if lote_nombre == "Lote 1":
-                last_27 = 27
-                first_53 = cantidad - last_27
-                if n <= last_27:
-                    p_idx = idx + first_53 + (n - 1)
-                else:
-                    p_idx = idx + (n - last_27 - 1)
-                persona = personas[p_idx]
-            else:
-                persona = personas[idx]
-
-            cert_path = os.path.join(lote_path, f"{n}.jpg")
-            if os.path.exists(cert_path):
-                persona["certificado"] = cert_path
-                persona["lote"] = lote_nombre
-                persona["cert_num"] = n
-
-        idx += cantidad
-    return personas
-
-
-PERSONAS = asignar_certificados(cargar_participantes())
+CERT_MAP = cargar_certificados()
+PERSONAS = cargar_participantes(CERT_MAP)
 EMAIL_INDEX = {p["email"]: p for p in PERSONAS if p.get("certificado")}
 
 
@@ -174,7 +171,10 @@ def verificar():
     email = (data.get("email") or "").strip().lower()
     persona = obtener_persona(email)
     if not persona:
-        return jsonify({"existe": False}), 404
+        return jsonify({
+            "existe": False,
+            "error": "Oh lo siento, tu certificado no fue encontrado. Te recomendamos ponerte en contacto con los organizadores."
+        }), 404
     return jsonify({
         "existe": True,
         "nombre": persona["nombre"],

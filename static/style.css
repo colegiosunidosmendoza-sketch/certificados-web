@@ -75,6 +75,12 @@ body{
 .btn-linkedin{background:#0a66c2;color:#fff}
 .btn-linkedin:hover{background:#084d96}
 .msg{font-size:.8rem;margin-top:12px;color:#1f8a70}
+.back-link{margin-top:8px;text-align:center}
+.btn-back{
+  background:transparent;color:#6b7f96;border:none;font-size:.8rem;
+  font-weight:500;cursor:pointer;padding:6px 12px;border-radius:8px;transition:all .2s
+}
+.btn-back:hover{background:#e8edf3;color:#1a2332}
 
 @media(max-width:500px){
   .header h1{font-size:1.6rem}

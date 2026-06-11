@@ -38,6 +38,9 @@
       <button id="btnSi" class="btn btn-primary">Sí, soy yo</button>
       <button id="btnNo" class="btn btn-secondary">No, no soy yo</button>
     </div>
+    <div class="back-link">
+      <button id="btnVolverConfirm" class="btn btn-back">← Volver</button>
+    </div>
     <p class="error" id="confirmError"></p>
   </div>
 
@@ -53,6 +56,9 @@
       <a id="btnDescargar" class="btn btn-primary" download>Descargar certificado</a>
       <button id="btnEnviar" class="btn btn-secondary">Enviar por email</button>
       <a id="btnLinkedin" class="btn btn-linkedin" target="_blank" rel="noopener">Compartir en LinkedIn</a>
+    </div>
+    <div class="back-link">
+      <button id="btnVolver" class="btn btn-back">← Volver</button>
     </div>
     <p class="msg" id="statusMsg"></p>
   </div>
@@ -97,7 +103,8 @@ form.addEventListener('submit', async (e) => {
     });
 
     if (!res.ok) {
-      errorMsg.textContent = 'Email no encontrado. Verificá que sea el mismo con el que te registraste.';
+      const errData = await res.json().catch(() => ({}));
+      errorMsg.textContent = errData.error || 'Email no encontrado. Verificá que sea el mismo con el que te registraste.';
       return;
     }
 
@@ -160,6 +167,22 @@ btnNo.addEventListener('click', () => {
   input.value = '';
   input.focus();
   errorMsg.textContent = 'Si no sos vos, verificá el email e intentá de nuevo.';
+});
+
+document.getElementById('btnVolver').addEventListener('click', () => {
+  stepCert.classList.add('hidden');
+  step1.classList.remove('hidden');
+  input.value = '';
+  input.focus();
+  statusMsg.textContent = '';
+});
+
+document.getElementById('btnVolverConfirm').addEventListener('click', () => {
+  stepConfirm.classList.add('hidden');
+  step1.classList.remove('hidden');
+  input.value = '';
+  input.focus();
+  errorMsg.textContent = '';
 });
 
 input.addEventListener('input', () => {
