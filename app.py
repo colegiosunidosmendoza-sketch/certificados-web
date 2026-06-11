@@ -23,7 +23,7 @@ else:
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
 CERT_BASE = os.path.join(BASE, "certificados")
 
-CERT_FOLDER = "todos_los_certificados"
+
 
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -41,10 +41,9 @@ def normalizar(texto):
 
 def cargar_certificados():
     mapa = {}
-    path = os.path.join(CERT_BASE, CERT_FOLDER)
-    if not os.path.isdir(path):
+    if not os.path.isdir(CERT_BASE):
         return mapa
-    for f in os.listdir(path):
+    for f in os.listdir(CERT_BASE):
         if not f.endswith(".jpg"):
             continue
         nombre = f[:-4]
