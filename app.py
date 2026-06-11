@@ -12,18 +12,22 @@ app = Flask(__name__)
 # ---------------------------------------------------------------------------
 # Configuracion  -  ajusta estas variables
 # ---------------------------------------------------------------------------
-EXCEL_PATH = os.path.expanduser(
-    "~/Desktop/Colegios Unidos/contactos.xlsx"
-)
-CERT_BASE = os.path.expanduser(
-    "~/Desktop/7128578304681535784"
-)
+HOME = os.path.expanduser("~")
+if os.path.exists(os.path.join(HOME, "certificados-web")):
+    # PythonAnywhere
+    BASE = os.path.join(HOME, "certificados-web")
+else:
+    # Local
+    BASE = os.path.join(HOME, "Desktop", "Colegios Unidos", "certificados-web")
+
+EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
+CERT_BASE = os.path.join(BASE, "certificados")
 
 # Orden de los lotes (tal cual estan en el disco)
 LOTES = [
-    ("Lote 3", "1_(Lote 3) II JORNADA DE EDUCACIÓN", 27),
-    ("Lote 2", "2_(Lote 2) II JORNADA DE EDUCACIÓN", 80),
-    ("Lote 1", "3_(Lote 1) II JORNADA DE EDUCACIÓN", 80),
+    ("Lote 3", "lote3", 27),
+    ("Lote 2", "lote2", 80),
+    ("Lote 1", "lote1", 80),
 ]
 
 # Email – usa variables de entorno en produccion

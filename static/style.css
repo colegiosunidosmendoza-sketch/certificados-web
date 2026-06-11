@@ -36,6 +36,18 @@ body{
 }
 .form button:hover{background:#144a7d}
 .error{color:#c0504a;font-size:.8rem;margin-top:10px}
+.confirm-box{
+  display:flex;align-items:center;gap:14px;
+  background:#f5f8fc;border-radius:12px;padding:20px;margin-bottom:20px
+}
+.confirm-icon{
+  width:48px;height:48px;border-radius:50%;background:#e8edf3;
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0
+}
+.confirm-info{flex:1}
+.confirm-name{font-size:1rem;font-weight:600;color:#1a2332}
+.confirm-email{font-size:.8rem;color:#4f667d;margin-top:2px}
+.confirm-actions{display:flex;gap:10px}
 .hidden{display:none!important}
 .info-bar{
   display:flex;align-items:center;gap:10px;margin-bottom:16px;

@@ -16,15 +16,32 @@
 <div class="container">
   <div class="card" id="step1">
     <h2>Tu certificado</h2>
-    <p class="desc">Ingresá el email con el que te registraste para ver y descargar tu certificado.</p>
+    <p class="desc">Ingresá el email con el que te registraste para buscar tu certificado.</p>
     <form id="formEmail" class="form">
       <input type="email" id="inputEmail" placeholder="tu@email.com" required autofocus>
-      <button type="submit">Buscar certificado</button>
+      <button type="submit">Buscar</button>
     </form>
     <p class="error" id="errorMsg"></p>
   </div>
 
-  <div class="card hidden" id="step2">
+  <div class="card hidden" id="stepConfirm">
+    <h2>Confirmación</h2>
+    <p class="desc">Encontramos este registro. ¿Sos vos?</p>
+    <div class="confirm-box">
+      <div class="confirm-icon">👤</div>
+      <div class="confirm-info">
+        <div class="confirm-name" id="confirmNombre"></div>
+        <div class="confirm-email" id="confirmEmail"></div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button id="btnSi" class="btn btn-primary">Sí, soy yo</button>
+      <button id="btnNo" class="btn btn-secondary">No, no soy yo</button>
+    </div>
+    <p class="error" id="confirmError"></p>
+  </div>
+
+  <div class="card hidden" id="stepCert">
     <div class="info-bar">
       <span class="badge" id="badgeLote"></span>
       <span id="nombreDisplay"></span>
@@ -35,9 +52,7 @@
     <div class="actions">
       <a id="btnDescargar" class="btn btn-primary" download>Descargar certificado</a>
       <button id="btnEnviar" class="btn btn-secondary">Enviar por email</button>
-      <a id="btnLinkedin" class="btn btn-linkedin" target="_blank" rel="noopener">
-        Compartir en LinkedIn
-      </a>
+      <a id="btnLinkedin" class="btn btn-linkedin" target="_blank" rel="noopener">Compartir en LinkedIn</a>
     </div>
     <p class="msg" id="statusMsg"></p>
   </div>
@@ -47,22 +62,31 @@
 const form = document.getElementById('formEmail');
 const input = document.getElementById('inputEmail');
 const errorMsg = document.getElementById('errorMsg');
+const confirmError = document.getElementById('confirmError');
 const step1 = document.getElementById('step1');
-const step2 = document.getElementById('step2');
+const stepConfirm = document.getElementById('stepConfirm');
+const stepCert = document.getElementById('stepCert');
+const confirmNombre = document.getElementById('confirmNombre');
+const confirmEmail = document.getElementById('confirmEmail');
 const certImg = document.getElementById('certImg');
 const nombreDisplay = document.getElementById('nombreDisplay');
 const badgeLote = document.getElementById('badgeLote');
 const btnDescargar = document.getElementById('btnDescargar');
 const btnEnviar = document.getElementById('btnEnviar');
 const btnLinkedin = document.getElementById('btnLinkedin');
+const btnSi = document.getElementById('btnSi');
+const btnNo = document.getElementById('btnNo');
 const statusMsg = document.getElementById('statusMsg');
+
+let currentEmail = '';
+let currentData = null;
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorMsg.textContent = '';
+  confirmError.textContent = '';
   statusMsg.textContent = '';
   const email = input.value.trim();
-
   if (!email) return;
 
   try {
@@ -77,48 +101,70 @@ form.addEventListener('submit', async (e) => {
       return;
     }
 
-    const data = await res.json();
+    currentData = await res.json();
+    currentEmail = email;
 
-    nombreDisplay.textContent = data.nombre;
-    badgeLote.textContent = data.lote;
-    const imgUrl = `/api/certificado?email=${encodeURIComponent(email)}`;
-    certImg.src = imgUrl;
-    certImg.onload = () => {
-      step1.classList.add('hidden');
-      step2.classList.remove('hidden');
-    };
-    btnDescargar.href = imgUrl;
-    btnDescargar.download = `certificado_${data.nombre.replace(/\s+/g, '_')}.jpg`;
+    confirmNombre.textContent = currentData.nombre;
+    confirmEmail.textContent = email;
 
-    const shareRes = await fetch(`/api/share-url?email=${encodeURIComponent(email)}`);
-    if (shareRes.ok) {
-      const shareData = await shareRes.json();
-      btnLinkedin.href = shareData.url;
-    }
-
-    btnEnviar.onclick = async () => {
-      btnEnviar.disabled = true;
-      statusMsg.textContent = 'Enviando...';
-      try {
-        const r = await fetch('/api/enviar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        const d = await r.json();
-        statusMsg.textContent = d.ok ? '✅ Enviado a tu email.' : 'Error: ' + d.error;
-      } catch {
-        statusMsg.textContent = 'Error de conexión al enviar.';
-      }
-      btnEnviar.disabled = false;
-    };
+    step1.classList.add('hidden');
+    stepConfirm.classList.remove('hidden');
   } catch {
     errorMsg.textContent = 'Error de conexión. Intentalo de nuevo.';
   }
 });
 
+btnSi.addEventListener('click', async () => {
+  stepConfirm.classList.add('hidden');
+  const email = currentEmail;
+
+  nombreDisplay.textContent = currentData.nombre;
+  badgeLote.textContent = currentData.lote;
+
+  const imgUrl = `/api/certificado?email=${encodeURIComponent(email)}`;
+  certImg.src = imgUrl;
+  certImg.onload = () => {
+    stepCert.classList.remove('hidden');
+  };
+
+  btnDescargar.href = imgUrl;
+  btnDescargar.download = `certificado_${currentData.nombre.replace(/\s+/g, '_')}.jpg`;
+
+  const shareRes = await fetch(`/api/share-url?email=${encodeURIComponent(email)}`);
+  if (shareRes.ok) {
+    const shareData = await shareRes.json();
+    btnLinkedin.href = shareData.url;
+  }
+
+  btnEnviar.onclick = async () => {
+    btnEnviar.disabled = true;
+    statusMsg.textContent = 'Enviando...';
+    try {
+      const r = await fetch('/api/enviar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const d = await r.json();
+      statusMsg.textContent = d.ok ? '✅ Enviado a tu email.' : 'Error: ' + d.error;
+    } catch {
+      statusMsg.textContent = 'Error de conexión al enviar.';
+    }
+    btnEnviar.disabled = false;
+  };
+});
+
+btnNo.addEventListener('click', () => {
+  stepConfirm.classList.add('hidden');
+  step1.classList.remove('hidden');
+  input.value = '';
+  input.focus();
+  errorMsg.textContent = 'Si no sos vos, verificá el email e intentá de nuevo.';
+});
+
 input.addEventListener('input', () => {
   errorMsg.textContent = '';
+  confirmError.textContent = '';
   statusMsg.textContent = '';
 });
 </script>
