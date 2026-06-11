@@ -25,8 +25,8 @@ CERT_BASE = os.path.join(BASE, "certificados")
 
 # Orden de los lotes (tal cual estan en el disco)
 LOTES = [
-    ("Lote 3", "lote3", 27),
     ("Lote 2", "lote2", 80),
+    ("Lote 3", "lote3", 27),
     ("Lote 1", "lote1", 80),
 ]
 
@@ -53,7 +53,6 @@ def cargar_participantes():
             personas.append({
                 "nombre": f"{nombre} {apellido}".strip(),
                 "email": email,
-                "row": row,
             })
     return personas
 
@@ -65,12 +64,25 @@ def asignar_certificados(personas):
         for n in range(1, cantidad + 1):
             if idx >= len(personas):
                 break
+
+            if lote_nombre == "Lote 1":
+                last_27 = 27
+                first_53 = cantidad - last_27
+                if n <= last_27:
+                    p_idx = idx + first_53 + (n - 1)
+                else:
+                    p_idx = idx + (n - last_27 - 1)
+                persona = personas[p_idx]
+            else:
+                persona = personas[idx]
+
             cert_path = os.path.join(lote_path, f"{n}.jpg")
             if os.path.exists(cert_path):
-                personas[idx]["certificado"] = cert_path
-                personas[idx]["lote"] = lote_nombre
-                personas[idx]["cert_num"] = n
-            idx += 1
+                persona["certificado"] = cert_path
+                persona["lote"] = lote_nombre
+                persona["cert_num"] = n
+
+        idx += cantidad
     return personas
 
 
