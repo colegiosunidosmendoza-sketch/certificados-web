@@ -54,7 +54,6 @@
     </div>
     <div class="actions">
       <a id="btnDescargar" class="btn btn-primary" download>Descargar certificado</a>
-      <button id="btnEnviar" class="btn btn-secondary">Enviar por email</button>
       <a id="btnLinkedin" class="btn btn-linkedin" target="_blank" rel="noopener">Compartir en LinkedIn</a>
     </div>
     <div class="back-link">
@@ -135,7 +134,7 @@ btnSi.addEventListener('click', async () => {
   };
 
   btnDescargar.href = imgUrl;
-  btnDescargar.download = `certificado_${currentData.nombre.replace(/\s+/g, '_')}.jpg`;
+  btnDescargar.download = `certificado_${currentData.nombre.replace(/\s+/g, '_')}.png`;
 
   const shareRes = await fetch(`/api/share-url?email=${encodeURIComponent(email)}`);
   if (shareRes.ok) {
@@ -143,22 +142,7 @@ btnSi.addEventListener('click', async () => {
     btnLinkedin.href = shareData.url;
   }
 
-  btnEnviar.onclick = async () => {
-    btnEnviar.disabled = true;
-    statusMsg.textContent = 'Enviando...';
-    try {
-      const r = await fetch('/api/enviar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const d = await r.json();
-      statusMsg.textContent = d.ok ? '✅ Enviado a tu email.' : 'Error: ' + d.error;
-    } catch {
-      statusMsg.textContent = 'Error de conexión al enviar.';
-    }
-    btnEnviar.disabled = false;
-  };
+
 });
 
 btnNo.addEventListener('click', () => {

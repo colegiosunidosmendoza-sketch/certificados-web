@@ -1,10 +1,7 @@
 import os
 import re
 import unicodedata
-import smtplib
-import ssl
-from email.message import EmailMessage
-from email.utils import formataddr
+
 
 import openpyxl
 from flask import Flask, jsonify, render_template, request, send_file
@@ -21,16 +18,7 @@ else:
     BASE = os.path.join(HOME, "Desktop", "Colegios Unidos", "certificados-web")
 
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
-CERT_BASE = os.path.join(BASE, "certificados")
-
-
-
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", SMTP_USER)
-FROM_NAME = os.getenv("FROM_NAME", "Colegios Unidos")
+CERT_BASE = os.path.join(os.path.dirname(BASE), "Todos los Certificados")
 
 
 def normalizar(texto):
@@ -44,11 +32,11 @@ def cargar_certificados():
     if not os.path.isdir(CERT_BASE):
         return mapa
     for f in os.listdir(CERT_BASE):
-        if not f.endswith(".jpg"):
+        if not f.endswith(".png"):
             continue
         nombre = f[:-4]
         mapa[normalizar(nombre)] = {
-            "path": os.path.join(path, f),
+            "path": os.path.join(CERT_BASE, f),
         }
     return mapa
 
@@ -81,59 +69,6 @@ EMAIL_INDEX = {p["email"]: p for p in PERSONAS if p.get("certificado")}
 
 def obtener_persona(email):
     return EMAIL_INDEX.get(email.strip().lower())
-
-
-# ---------------------------------------------------------------------------
-# Enviar email
-# ---------------------------------------------------------------------------
-def enviar_certificado(persona):
-    if not SMTP_USER or not SMTP_PASS:
-        return False, "SMTP no configurado. Revisa las variables SMTP_USER y SMTP_PASS."
-
-    msg = EmailMessage()
-    msg["Subject"] = "Tu certificado - Colegios Unidos · 2° Encuentro"
-    msg["From"] = formataddr((FROM_NAME, FROM_EMAIL))
-    msg["To"] = persona["email"]
-
-    msg.set_content(
-        f"Hola {persona['nombre']},\n\n"
-        "Gracias por participar en el 2° Encuentro de Colegios Unidos.\n"
-        "Adjuntamos tu certificado. ¡Compartilo en LinkedIn y contale a todos\n"
-        "que te capacitaste en IA y bienestar en el mapa escolar!\n\n"
-        "Saludos,\nEquipo Colegios Unidos"
-    )
-
-    msg.add_alternative(
-        f"""
-<html><body style="font-family:sans-serif;padding:20px">
-<h2>¡Hola {persona['nombre']}!</h2>
-<p>Gracias por participar en el <strong>2° Encuentro de Colegios Unidos</strong>.</p>
-<p>Adjuntamos tu certificado. Compartilo en LinkedIn y contale a todos
-que te capacitaste en <em>IA y bienestar en el mapa escolar</em>.</p>
-<br><p>Saludos,<br><strong>Equipo Colegios Unidos</strong></p>
-</body></html>
-""",
-        subtype="html",
-    )
-
-    with open(persona["certificado"], "rb") as f:
-        img_data = f.read()
-    msg.add_attachment(
-        img_data,
-        maintype="image",
-        subtype="jpeg",
-        filename=f"certificado_{persona['nombre'].replace(' ','_')}.jpg",
-    )
-
-    try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls(context=context)
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
-        return True, "Certificado enviado correctamente."
-    except Exception as e:
-        return False, str(e)
 
 
 # ---------------------------------------------------------------------------
@@ -179,18 +114,8 @@ def certificado():
     persona = obtener_persona(email)
     if not persona or not persona.get("certificado"):
         return jsonify({"error": "No encontrado"}), 404
-    return send_file(persona["certificado"], mimetype="image/jpeg")
+    return send_file(persona["certificado"], mimetype="image/png")
 
-
-@app.route("/api/enviar", methods=["POST"])
-def enviar():
-    data = request.get_json()
-    email = (data.get("email") or "").strip().lower()
-    persona = obtener_persona(email)
-    if not persona:
-        return jsonify({"ok": False, "error": "Email no registrado"}), 404
-    ok, msg = enviar_certificado(persona)
-    return jsonify({"ok": ok, "mensaje": msg})
 
 
 @app.route("/api/share-url")
