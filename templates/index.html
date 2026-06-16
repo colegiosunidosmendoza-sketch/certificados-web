@@ -133,7 +133,7 @@ btnSi.addEventListener('click', async () => {
     stepCert.classList.remove('hidden');
   };
 
-  btnDescargar.href = imgUrl;
+  btnDescargar.href = `${imgUrl}&download=1`;
   btnDescargar.download = `certificado_${currentData.nombre.replace(/\s+/g, '_')}.jpg`;
 
   const shareRes = await fetch(`/api/share-url?email=${encodeURIComponent(email)}`);

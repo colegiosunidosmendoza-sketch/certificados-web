@@ -114,6 +114,8 @@ def certificado():
     persona = obtener_persona(email)
     if not persona or not persona.get("certificado"):
         return jsonify({"error": "No encontrado"}), 404
+    if request.args.get("download"):
+        return send_file(persona["certificado"], mimetype="image/jpeg", as_attachment=True, download_name=f"certificado_{persona['nombre'].replace(' ','_')}.jpg")
     return send_file(persona["certificado"], mimetype="image/jpeg")
 
 
