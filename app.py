@@ -18,7 +18,7 @@ else:
     BASE = os.path.join(HOME, "Desktop", "Colegios Unidos", "certificados-web")
 
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
-CERT_BASE = os.path.join(os.path.dirname(BASE), "Todos los Certificados")
+CERT_BASE = os.path.join(BASE, "certificados")
 
 
 def normalizar(texto):
