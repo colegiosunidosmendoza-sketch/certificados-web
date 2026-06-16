@@ -32,7 +32,7 @@ def cargar_certificados():
     if not os.path.isdir(CERT_BASE):
         return mapa
     for f in os.listdir(CERT_BASE):
-        if not f.endswith(".png"):
+        if not f.endswith(".jpg"):
             continue
         nombre = f[:-4]
         mapa[normalizar(nombre)] = {
@@ -114,7 +114,7 @@ def certificado():
     persona = obtener_persona(email)
     if not persona or not persona.get("certificado"):
         return jsonify({"error": "No encontrado"}), 404
-    return send_file(persona["certificado"], mimetype="image/png")
+    return send_file(persona["certificado"], mimetype="image/jpeg")
 
 
 

@@ -134,7 +134,7 @@ btnSi.addEventListener('click', async () => {
   };
 
   btnDescargar.href = imgUrl;
-  btnDescargar.download = `certificado_${currentData.nombre.replace(/\s+/g, '_')}.png`;
+  btnDescargar.download = `certificado_${currentData.nombre.replace(/\s+/g, '_')}.jpg`;
 
   const shareRes = await fetch(`/api/share-url?email=${encodeURIComponent(email)}`);
   if (shareRes.ok) {
