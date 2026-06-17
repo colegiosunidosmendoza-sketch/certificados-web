@@ -64,6 +64,18 @@ def cargar_participantes(mapa_certs):
 
 CERT_MAP = cargar_certificados()
 PERSONAS = cargar_participantes(CERT_MAP)
+
+# Fallback: si el nombre del Excel no matcheó exacto,
+# buscar cualquier archivo que contenga todas las palabras del nombre
+for p in PERSONAS:
+    if p.get("certificado"):
+        continue
+    palabras = set(normalizar(p["nombre"]).split())
+    for fnorm, cdata in CERT_MAP.items():
+        if palabras.issubset(set(fnorm.split())) or set(fnorm.split()).issubset(palabras):
+            p["certificado"] = cdata["path"]
+            break
+
 EMAIL_INDEX = {p["email"]: p for p in PERSONAS if p.get("certificado")}
 
 
