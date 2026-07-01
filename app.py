@@ -18,7 +18,7 @@ else:
     BASE = os.path.join(HOME, "Desktop", "Colegios Unidos", "certificados-web")
 
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
-CERT_BASE = os.path.join(BASE, "certificados")
+CERT_BASE = os.path.join(os.path.dirname(BASE), "Todos los Certificados")
 
 
 def normalizar(texto):
@@ -32,7 +32,7 @@ def cargar_certificados():
     if not os.path.isdir(CERT_BASE):
         return mapa
     for f in os.listdir(CERT_BASE):
-        if not f.endswith(".jpg"):
+        if not (f.endswith(".jpg") or f.endswith(".png")):
             continue
         nombre = f[:-4]
         mapa[normalizar(nombre)] = {
@@ -126,9 +126,11 @@ def certificado():
     persona = obtener_persona(email)
     if not persona or not persona.get("certificado"):
         return jsonify({"error": "No encontrado"}), 404
+    ext = os.path.splitext(persona["certificado"])[1].lower()
+    mimetype = "image/png" if ext == ".png" else "image/jpeg"
     if request.args.get("download"):
-        return send_file(persona["certificado"], mimetype="image/jpeg", as_attachment=True, download_name=f"certificado_{persona['nombre'].replace(' ','_')}.jpg")
-    return send_file(persona["certificado"], mimetype="image/jpeg")
+        return send_file(persona["certificado"], mimetype=mimetype, as_attachment=True, download_name=f"certificado_{persona['nombre'].replace(' ','_')}{ext}")
+    return send_file(persona["certificado"], mimetype=mimetype)
 
 
 
