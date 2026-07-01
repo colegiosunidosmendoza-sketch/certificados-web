@@ -18,7 +18,16 @@ else:
     BASE = os.path.join(HOME, "Desktop", "Colegios Unidos", "certificados-web")
 
 EXCEL_PATH = os.path.join(BASE, "data", "contactos.xlsx")
-CERT_BASE = os.path.join(os.path.dirname(BASE), "Todos los Certificados")
+# Buscar certificados en varios lugares posibles
+_cert_env = os.environ.get("CERTIFICADOS_DIR")
+if _cert_env and os.path.isdir(_cert_env):
+    CERT_BASE = _cert_env
+elif os.path.isdir(os.path.join(BASE, "certificados")):
+    CERT_BASE = os.path.join(BASE, "certificados")
+elif os.path.isdir(os.path.join(os.path.dirname(BASE), "Todos los Certificados")):
+    CERT_BASE = os.path.join(os.path.dirname(BASE), "Todos los Certificados")
+else:
+    CERT_BASE = os.path.join(BASE, "certificados")
 
 
 def normalizar(texto):
